@@ -78,7 +78,8 @@ player_game_schema = StructType([
     StructField("UsageRatePercentage", DoubleType(), True),
     StructField("FantasyPointsFanDuel", DoubleType(), True),
     StructField("FantasyPointsDraftKings", DoubleType(), True),
-    StructField("FantasyPointsYahoo", DoubleType(), True)
+    StructField("FantasyPointsYahoo", DoubleType(), True),
+    StructField("timestamp", TimestampType(), True)
 ])
 
 # Define the DLT schema for game
@@ -130,7 +131,8 @@ game_schema = StructType([
     StructField("OverPayout", IntegerType(), True),
     StructField("UnderPayout", IntegerType(), True),
     StructField("DateTimeUTC", TimestampType(), True),
-    StructField("Attendance", IntegerType(), True)
+    StructField("Attendance", IntegerType(), True),
+    StructField("timestamp", TimestampType(), True)
 ])
 
 # COMMAND ----------
@@ -207,7 +209,8 @@ schema_mapping_player_games = {
     "UsageRatePercentage": float,
     "FantasyPointsFanDuel": float,
     "FantasyPointsDraftKings": float,
-    "FantasyPointsYahoo": float
+    "FantasyPointsYahoo": float,
+    "timestamp": 'datetime64[ns]'
 }
 
 # Define the schema mapping for games dataframe
@@ -259,7 +262,8 @@ schema_mapping_games = {
     "OverPayout": int,
     "UnderPayout": int,
     "DateTimeUTC": 'datetime64[ns]',
-    "Attendance": int
+    "Attendance": int,
+    "timestamp": 'datetime64[ns]'
 }
 
 # COMMAND ----------
@@ -351,6 +355,7 @@ schema_mapping_games = {
 import requests
 import pandas as pd
 from pyspark.sql.functions import col, explode, from_json, to_json
+import dlt
 
 # Fetch data from the API
 def fetch_data_from_api(api_url):
@@ -373,14 +378,19 @@ json_data = fetch_data_from_api(api_url)
 # Convert the JSON data to a pandas DataFrame
 pdf = pd.DataFrame(json_data)
 
+# Add a timestamp column to the DataFrame
+current_timestamp = pd.Timestamp.now()
+
 # Build the player_games pandas DataFrame
 pdf_exploded = pdf.explode('PlayerGames')
 df_player_games = pd.json_normalize(pdf_exploded['PlayerGames'])
+df_player_games['timestamp'] = current_timestamp
 df_player_games = fill_nas(df_player_games)
 df_player_games = df_player_games.astype(schema_mapping_player_games)
 
 # Build the games pandas DataFrame
 df_games = pd.json_normalize(pdf['Game'])
+df_games['timestamp'] = current_timestamp
 columns_to_drop = [col for col in df_games.columns if col.startswith('Stadium')]
 columns_to_drop.extend(['Periods'])
 df_games = df_games.drop(columns=columns_to_drop)
@@ -390,6 +400,21 @@ df_games = df_games.astype(schema_mapping_games)
 # Create the Spark dataframes
 df_player_games = spark.createDataFrame(df_player_games)
 df_games = spark.createDataFrame(df_games)
+
+# Define the Delta Live Tables pipeline
+@dlt.table(
+    name="jw_raw_player_games",
+    comment="Table containing player games data"
+)
+def load_player_games_data():
+    return df_player_games
+
+@dlt.table(
+    name="jw_raw_games",
+    comment="Table containing team games data"
+)
+def load_team_games_data():
+    return df_games
 
 # COMMAND ----------
 

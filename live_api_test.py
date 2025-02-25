@@ -1,5 +1,4 @@
 # Databricks notebook source
-# %python
 # %pip install databricks-dlt
 # %restart_python
 
@@ -7,8 +6,7 @@
 
 from pyspark.sql.types import StructType, StructField, IntegerType, StringType, BooleanType, DoubleType, TimestampType, ArrayType
 
-# Define the schema for PlayerGames
-# Define the schema for PlayerGames
+# Define the DLT schema for player_game
 player_game_schema = StructType([
     StructField("StatID", IntegerType(), True),
     StructField("TeamID", IntegerType(), True),
@@ -83,6 +81,7 @@ player_game_schema = StructType([
     StructField("FantasyPointsYahoo", DoubleType(), True)
 ])
 
+# Define the DLT schema for game
 game_schema = StructType([
     StructField("GameID", IntegerType(), True),
     StructField("Season", IntegerType(), True),
@@ -136,7 +135,7 @@ game_schema = StructType([
 
 # COMMAND ----------
 
-# Define the schema mapping
+# Define the schema mapping for player_games dataframe
 schema_mapping_player_games = {
     "StatID": int,
     "TeamID": int,
@@ -211,6 +210,7 @@ schema_mapping_player_games = {
     "FantasyPointsYahoo": float
 }
 
+# Define the schema mapping for games dataframe
 schema_mapping_games = {
     "GameID": int,
     "Season": int,
@@ -264,30 +264,17 @@ schema_mapping_games = {
 
 # COMMAND ----------
 
-# # Normalize the 'Game' column
-# df_games = pd.json_normalize(pdf['Game'])
-
-# # Check if 'Stadium' and 'Periods' columns exist before dropping them
-# columns_to_drop = ['Stadium', 'Periods']
-# existing_columns_to_drop = [col for col in columns_to_drop if col in df_games.columns]
-# df_games = df_games.drop(columns=existing_columns_to_drop)
-
-# # Display the resulting DataFrame
-# display(df_games)
-
-# COMMAND ----------
+# Optional - Build dataframes for team_games and periods
 
 # pdf_exploded = pdf.explode('TeamGames')
 # df_team_games = pd.json_normalize(pdf_exploded['TeamGames'])
-
-# COMMAND ----------
 
 # pdf_exploded = pdf.explode('Periods')
 # df_periods = pd.json_normalize(pdf_exploded['Periods'])
 
 # COMMAND ----------
 
-# # This cell for troubleshooting, not for use with pipeline
+# # This cell for troubleshooting (not for use with pipeline)
 
 # import requests
 # import pandas as pd
@@ -321,7 +308,6 @@ schema_mapping_games = {
 # df_player_games = fill_nas(df_player_games)
 # df_player_games = df_player_games.astype(schema_mapping_player_games)
 
-
 # # Normalize the 'Game' column
 # df_games = pd.json_normalize(pdf['Game'])
 
@@ -339,7 +325,7 @@ schema_mapping_games = {
 
 # COMMAND ----------
 
-# # Cast each column to the appropriate type
+# # For troubleshooting problematic columns when mapping schema to dtypes
 # for column, dtype in schema_mapping_games.items():
 #     if column in df_games.columns:
 #         print(column)
@@ -385,31 +371,29 @@ api_url = "https://replay.sportsdata.io/api/v3/cbb/stats/json/boxscoresdelta/202
 json_data = fetch_data_from_api(api_url)
 
 # Convert the JSON data to a pandas DataFrame
-# pdf = pd.json_normalize(json_data, sep='_')
 pdf = pd.DataFrame(json_data)
 
+# Build the player_games pandas DataFrame
 pdf_exploded = pdf.explode('PlayerGames')
 df_player_games = pd.json_normalize(pdf_exploded['PlayerGames'])
-
 df_player_games = fill_nas(df_player_games)
 df_player_games = df_player_games.astype(schema_mapping_player_games)
 
-
-# Normalize the 'Game' column
+# Build the games pandas DataFrame
 df_games = pd.json_normalize(pdf['Game'])
-
-# Check if 'Stadium' and 'Periods' columns exist before dropping them
 columns_to_drop = [col for col in df_games.columns if col.startswith('Stadium')]
 columns_to_drop.extend(['Periods'])
 df_games = df_games.drop(columns=columns_to_drop)
-
 df_games = fill_nas(df_games)
 df_games = df_games.astype(schema_mapping_games)
 
+# Create the Spark dataframes
 df_player_games = spark.createDataFrame(df_player_games)
 df_games = spark.createDataFrame(df_games)
 
-# Define the Delta Live Table
+# COMMAND ----------
+
+# Define the Delta Live Tables pipeline
 @dlt.table(
     name="jw_raw_player_games",
     comment="Table containing player games data"
@@ -423,43 +407,6 @@ def load_player_games_data():
 )
 def load_team_games_data():
     return df_games
-
-# COMMAND ----------
-
-# @dlt.table(
-#     name="jw_raw_stadiums",
-#     comment="Table containing stadium data"
-# )
-# def load_stadium_data():
-#     return stadium_df
-
-# @dlt.table(
-#     name="jw_raw_games",
-#     comment="Table containing game data"
-# )
-# def load_game_data():
-#     return game_df
-
-# @dlt.table(
-#     name="jw_raw_periods",
-#     comment="Table containing periods data"
-# )
-# def load_periods_data():
-#     return periods_df
-
-# @dlt.table(
-#     name="jw_raw_player_games",
-#     comment="Table containing player games data"
-# )
-# def load_player_games_data():
-#     return player_games_df
-
-# @dlt.table(
-#     name="jw_raw_team_games",
-#     comment="Table containing team games data"
-# )
-# def load_team_games_data():
-#     return team_games_df
 
 # COMMAND ----------
 

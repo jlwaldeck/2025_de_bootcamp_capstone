@@ -83,10 +83,61 @@ player_game_schema = StructType([
     StructField("FantasyPointsYahoo", DoubleType(), True)
 ])
 
+game_schema = StructType([
+    StructField("GameID", IntegerType(), True),
+    StructField("Season", IntegerType(), True),
+    StructField("SeasonType", IntegerType(), True),
+    StructField("Status", StringType(), True),
+    StructField("Day", TimestampType(), True),
+    StructField("DateTime", TimestampType(), True),
+    StructField("AwayTeam", StringType(), True),
+    StructField("HomeTeam", StringType(), True),
+    StructField("AwayTeamID", IntegerType(), True),
+    StructField("HomeTeamID", IntegerType(), True),
+    StructField("AwayTeamScore", IntegerType(), True),
+    StructField("HomeTeamScore", IntegerType(), True),
+    StructField("Updated", TimestampType(), True),
+    StructField("Period", StringType(), True),
+    StructField("TimeRemainingMinutes", IntegerType(), True),
+    StructField("TimeRemainingSeconds", IntegerType(), True),
+    StructField("PointSpread", DoubleType(), True),
+    StructField("OverUnder", DoubleType(), True),
+    StructField("AwayTeamMoneyLine", IntegerType(), True),
+    StructField("HomeTeamMoneyLine", IntegerType(), True),
+    StructField("GlobalGameID", IntegerType(), True),
+    StructField("GlobalAwayTeamID", IntegerType(), True),
+    StructField("GlobalHomeTeamID", IntegerType(), True),
+    StructField("TournamentID", StringType(), True),
+    StructField("Bracket", StringType(), True),
+    StructField("Round", StringType(), True),
+    StructField("AwayTeamSeed", StringType(), True),
+    StructField("HomeTeamSeed", StringType(), True),
+    StructField("AwayTeamPreviousGameID", StringType(), True),
+    StructField("HomeTeamPreviousGameID", StringType(), True),
+    StructField("AwayTeamPreviousGlobalGameID", StringType(), True),
+    StructField("HomeTeamPreviousGlobalGameID", StringType(), True),
+    StructField("TournamentDisplayOrder", StringType(), True),
+    StructField("TournamentDisplayOrderForHomeTeam", StringType(), True),
+    StructField("IsClosed", BooleanType(), True),
+    StructField("GameEndDateTime", TimestampType(), True),
+    StructField("HomeRotationNumber", IntegerType(), True),
+    StructField("AwayRotationNumber", IntegerType(), True),
+    StructField("TopTeamPreviousGameId", StringType(), True),
+    StructField("BottomTeamPreviousGameId", StringType(), True),
+    StructField("Channel", StringType(), True),
+    StructField("NeutralVenue", BooleanType(), True),
+    StructField("AwayPointSpreadPayout", IntegerType(), True),
+    StructField("HomePointSpreadPayout", IntegerType(), True),
+    StructField("OverPayout", IntegerType(), True),
+    StructField("UnderPayout", IntegerType(), True),
+    StructField("DateTimeUTC", TimestampType(), True),
+    StructField("Attendance", IntegerType(), True)
+])
+
 # COMMAND ----------
 
 # Define the schema mapping
-schema_mapping = {
+schema_mapping_player_games = {
     "StatID": int,
     "TeamID": int,
     "PlayerID": int,
@@ -160,30 +211,56 @@ schema_mapping = {
     "FantasyPointsYahoo": float
 }
 
-# COMMAND ----------
-
-# import requests
-# import pandas as pd
-# from pyspark.sql.functions import col, explode, from_json, to_json
-
-# # Fetch data from the API
-# def fetch_data_from_api(api_url):
-#     response = requests.get(api_url)
-#     response.raise_for_status()  # Raise an error for bad status codes
-#     return response.json()
-
-# api_url = "https://replay.sportsdata.io/api/v3/cbb/stats/json/boxscoresdelta/2023-12-02/all?key=bafecc01eaaf419a984cd7ec2b602594"
-# json_data = fetch_data_from_api(api_url)
-
-# COMMAND ----------
-
-# pdf = pd.json_normalize(json_data, sep='_')
-# pdf = pd.DataFrame(json_data)
-# pdf.head(3)
-
-# COMMAND ----------
-
-# list(pdf.columns)
+schema_mapping_games = {
+    "GameID": int,
+    "Season": int,
+    "SeasonType": int,
+    "Status": str,
+    "Day": 'datetime64[ns]',
+    "DateTime": 'datetime64[ns]',
+    "AwayTeam": str,
+    "HomeTeam": str,
+    "AwayTeamID": int,
+    "HomeTeamID": int,
+    "AwayTeamScore": int,
+    "HomeTeamScore": int,
+    "Updated": 'datetime64[ns]',
+    "Period": str,
+    "TimeRemainingMinutes": int,
+    "TimeRemainingSeconds": int,
+    "PointSpread": float,
+    "OverUnder": float,
+    "AwayTeamMoneyLine": int,
+    "HomeTeamMoneyLine": int,
+    "GlobalGameID": int,
+    "GlobalAwayTeamID": int,
+    "GlobalHomeTeamID": int,
+    "TournamentID": str,
+    "Bracket": str,
+    "Round": str,
+    "AwayTeamSeed": str,
+    "HomeTeamSeed": str,
+    "AwayTeamPreviousGameID": str,
+    "HomeTeamPreviousGameID": str,
+    "AwayTeamPreviousGlobalGameID": str,
+    "HomeTeamPreviousGlobalGameID": str,
+    "TournamentDisplayOrder": str,
+    "TournamentDisplayOrderForHomeTeam": str,
+    "IsClosed": bool,
+    "GameEndDateTime": 'datetime64[ns]',
+    "HomeRotationNumber": int,
+    "AwayRotationNumber": int,
+    "TopTeamPreviousGameId": str,
+    "BottomTeamPreviousGameId": str,
+    "Channel": str,
+    "NeutralVenue": bool,
+    "AwayPointSpreadPayout": int,
+    "HomePointSpreadPayout": int,
+    "OverPayout": int,
+    "UnderPayout": int,
+    "DateTimeUTC": 'datetime64[ns]',
+    "Attendance": int
+}
 
 # COMMAND ----------
 
@@ -200,22 +277,6 @@ schema_mapping = {
 
 # COMMAND ----------
 
-# # Remove 'Stadium' and 'Periods' from each dictionary in the 'Game' column
-# pdf['Game'] = pdf['Game'].apply(lambda x: {k: v for k, v in x.items() if k not in ['Stadium', 'Periods']})
-
-# # Create a new DataFrame from the modified 'Game' column
-# df_games = pd.json_normalize(pdf['Game'])
-
-# # Display the resulting DataFrame
-# display(df_games)
-
-# COMMAND ----------
-
-# pdf_exploded = pdf.explode('PlayerGames')
-# df_player_games = pd.json_normalize(pdf_exploded['PlayerGames'])
-
-# COMMAND ----------
-
 # pdf_exploded = pdf.explode('TeamGames')
 # df_team_games = pd.json_normalize(pdf_exploded['TeamGames'])
 
@@ -223,6 +284,81 @@ schema_mapping = {
 
 # pdf_exploded = pdf.explode('Periods')
 # df_periods = pd.json_normalize(pdf_exploded['Periods'])
+
+# COMMAND ----------
+
+# # This cell for troubleshooting, not for use with pipeline
+
+# import requests
+# import pandas as pd
+# from pyspark.sql.functions import col, explode, from_json, to_json
+
+# # Fetch data from the API
+# def fetch_data_from_api(api_url):
+#     response = requests.get(api_url)
+#     response.raise_for_status()  # Raise an error for bad status codes
+#     return response.json()
+
+# # Fill NaN values: 0 for numeric columns, blank string for string columns
+# def fill_nas(df):
+#     for column in df.columns:
+#         if pd.api.types.is_numeric_dtype(df[column]):
+#             df[column] = df[column].fillna(0)
+#         elif pd.api.types.is_string_dtype(df[column]):
+#             df[column] = df[column].fillna('')
+#     return df
+
+# api_url = "https://replay.sportsdata.io/api/v3/cbb/stats/json/boxscoresdelta/2023-12-02/all?key=bafecc01eaaf419a984cd7ec2b602594"
+# json_data = fetch_data_from_api(api_url)
+
+# # Convert the JSON data to a pandas DataFrame
+# # pdf = pd.json_normalize(json_data, sep='_')
+# pdf = pd.DataFrame(json_data)
+
+# pdf_exploded = pdf.explode('PlayerGames')
+# df_player_games = pd.json_normalize(pdf_exploded['PlayerGames'])
+
+# df_player_games = fill_nas(df_player_games)
+# df_player_games = df_player_games.astype(schema_mapping_player_games)
+
+
+# # Normalize the 'Game' column
+# df_games = pd.json_normalize(pdf['Game'])
+
+# # Check if 'Stadium' and 'Periods' columns exist before dropping them
+# # columns_to_drop = ['Stadium', 'Periods']
+# # existing_columns_to_drop = [col for col in columns_to_drop if col in df_games.columns]
+# # df_games = df_games.drop(columns=existing_columns_to_drop)
+
+# columns_to_drop = [col for col in df_games.columns if col.startswith('Stadium')]
+# columns_to_drop.extend(['Periods'])
+# df_games = df_games.drop(columns=columns_to_drop)
+
+# # df_games = fill_nas(df_games)
+# # df_games = df_games.astype(schema_mapping_games)
+
+# COMMAND ----------
+
+# # Cast each column to the appropriate type
+# for column, dtype in schema_mapping_games.items():
+#     if column in df_games.columns:
+#         print(column)
+#         print(dtype)
+#         df_games[column] = df_games[column].astype(dtype)
+
+# # Note: I cast these columns to int to enable functional testing, but that probably doesn't make sense:
+# # TournamentID
+# # AwayTeamSeed
+# # HomeTeamSeed
+# # AwayTeamPreviousGameID
+# # HomeTeamPreviousGameID
+# # AwayTeamPreviousGlobalGameID
+# # HomeTeamPreviousGlobalGameID
+# # TournamentDisplayOrder
+# # TournamentDisplayOrderForHomeTeam
+# # TopTeamPreviousGameId
+# # BottomTeamPreviousGameId
+
 
 # COMMAND ----------
 
@@ -255,28 +391,23 @@ pdf = pd.DataFrame(json_data)
 pdf_exploded = pdf.explode('PlayerGames')
 df_player_games = pd.json_normalize(pdf_exploded['PlayerGames'])
 
-# Cast each column to the appropriate type
-# for column, dtype in schema_mapping.items():
-#     if column in df_player_games.columns:
-#         df_player_games[column] = df_player_games[column].astype(dtype)
-
-
 df_player_games = fill_nas(df_player_games)
-# df_games = fill_nas(df_games)
+df_player_games = df_player_games.astype(schema_mapping_player_games)
 
-df_player_games = df_player_games.astype(schema_mapping)
 
 # Normalize the 'Game' column
-# df_games = pd.json_normalize(pdf['Game'])
+df_games = pd.json_normalize(pdf['Game'])
 
-# # Check if 'Stadium' and 'Periods' columns exist before dropping them
-# columns_to_drop = ['Stadium', 'Periods']
-# existing_columns_to_drop = [col for col in columns_to_drop if col in df_games.columns]
-# df_games = df_games.drop(columns=existing_columns_to_drop)
+# Check if 'Stadium' and 'Periods' columns exist before dropping them
+columns_to_drop = [col for col in df_games.columns if col.startswith('Stadium')]
+columns_to_drop.extend(['Periods'])
+df_games = df_games.drop(columns=columns_to_drop)
 
-
+df_games = fill_nas(df_games)
+df_games = df_games.astype(schema_mapping_games)
 
 df_player_games = spark.createDataFrame(df_player_games)
+df_games = spark.createDataFrame(df_games)
 
 # Define the Delta Live Table
 @dlt.table(
@@ -285,6 +416,13 @@ df_player_games = spark.createDataFrame(df_player_games)
 )
 def load_player_games_data():
     return df_player_games
+
+@dlt.table(
+    name="jw_raw_games",
+    comment="Table containing team games data"
+)
+def load_team_games_data():
+    return df_games
 
 # COMMAND ----------
 

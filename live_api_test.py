@@ -131,7 +131,7 @@ game_schema = StructType([
     StructField("OverPayout", IntegerType(), True),
     StructField("UnderPayout", IntegerType(), True),
     StructField("DateTimeUTC", TimestampType(), True),
-    StructField("Attendance", IntegerType(), True),
+    StructField("Attendance", StringType(), True),
     StructField("timestamp", TimestampType(), True)
 ])
 
@@ -262,7 +262,7 @@ schema_mapping_games = {
     "OverPayout": int,
     "UnderPayout": int,
     "DateTimeUTC": 'datetime64[ns]',
-    "Attendance": int,
+    "Attendance": str,
     "timestamp": 'datetime64[ns]'
 }
 

@@ -278,57 +278,6 @@ schema_mapping_games = {
 
 # COMMAND ----------
 
-# # This cell for troubleshooting (not for use with pipeline)
-
-# import requests
-# import pandas as pd
-# from pyspark.sql.functions import col, explode, from_json, to_json
-
-# # Fetch data from the API
-# def fetch_data_from_api(api_url):
-#     response = requests.get(api_url)
-#     response.raise_for_status()  # Raise an error for bad status codes
-#     return response.json()
-
-# # Fill NaN values: 0 for numeric columns, blank string for string columns
-# def fill_nas(df):
-#     for column in df.columns:
-#         if pd.api.types.is_numeric_dtype(df[column]):
-#             df[column] = df[column].fillna(0)
-#         elif pd.api.types.is_string_dtype(df[column]):
-#             df[column] = df[column].fillna('')
-#     return df
-
-# api_url = "https://replay.sportsdata.io/api/v3/cbb/stats/json/boxscoresdelta/2023-12-02/all?key=bafecc01eaaf419a984cd7ec2b602594"
-# json_data = fetch_data_from_api(api_url)
-
-# # Convert the JSON data to a pandas DataFrame
-# # pdf = pd.json_normalize(json_data, sep='_')
-# pdf = pd.DataFrame(json_data)
-
-# pdf_exploded = pdf.explode('PlayerGames')
-# df_player_games = pd.json_normalize(pdf_exploded['PlayerGames'])
-
-# df_player_games = fill_nas(df_player_games)
-# df_player_games = df_player_games.astype(schema_mapping_player_games)
-
-# # Normalize the 'Game' column
-# df_games = pd.json_normalize(pdf['Game'])
-
-# # Check if 'Stadium' and 'Periods' columns exist before dropping them
-# # columns_to_drop = ['Stadium', 'Periods']
-# # existing_columns_to_drop = [col for col in columns_to_drop if col in df_games.columns]
-# # df_games = df_games.drop(columns=existing_columns_to_drop)
-
-# columns_to_drop = [col for col in df_games.columns if col.startswith('Stadium')]
-# columns_to_drop.extend(['Periods'])
-# df_games = df_games.drop(columns=columns_to_drop)
-
-# # df_games = fill_nas(df_games)
-# # df_games = df_games.astype(schema_mapping_games)
-
-# COMMAND ----------
-
 # # For troubleshooting problematic columns when mapping schema to dtypes
 # for column, dtype in schema_mapping_games.items():
 #     if column in df_games.columns:
@@ -336,18 +285,18 @@ schema_mapping_games = {
 #         print(dtype)
 #         df_games[column] = df_games[column].astype(dtype)
 
-# # Note: I cast these columns to int to enable functional testing, but that probably doesn't make sense:
-# # TournamentID
-# # AwayTeamSeed
-# # HomeTeamSeed
-# # AwayTeamPreviousGameID
-# # HomeTeamPreviousGameID
-# # AwayTeamPreviousGlobalGameID
-# # HomeTeamPreviousGlobalGameID
-# # TournamentDisplayOrder
-# # TournamentDisplayOrderForHomeTeam
-# # TopTeamPreviousGameId
-# # BottomTeamPreviousGameId
+# # # TODO: I hacked these columns to str type to enable functional testing.  Need better fix.
+# # # TournamentID
+# # # AwayTeamSeed
+# # # HomeTeamSeed
+# # # AwayTeamPreviousGameID
+# # # HomeTeamPreviousGameID
+# # # AwayTeamPreviousGlobalGameID
+# # # HomeTeamPreviousGlobalGameID
+# # # TournamentDisplayOrder
+# # # TournamentDisplayOrderForHomeTeam
+# # # TopTeamPreviousGameId
+# # # BottomTeamPreviousGameId
 
 
 # COMMAND ----------
@@ -355,7 +304,6 @@ schema_mapping_games = {
 import requests
 import pandas as pd
 from pyspark.sql.functions import col, explode, from_json, to_json
-import dlt
 
 # Fetch data from the API
 def fetch_data_from_api(api_url):
@@ -372,7 +320,7 @@ def fill_nas(df):
             df[column] = df[column].fillna('')
     return df
 
-api_url = "https://replay.sportsdata.io/api/v3/cbb/stats/json/boxscoresdelta/2023-12-02/all?key=bafecc01eaaf419a984cd7ec2b602594"
+api_url = "https://replay.sportsdata.io/api/v3/cbb/stats/json/boxscoresdelta/2023-12-02/all?key=cbd8b35a014d4f39826ee21ed834c8db"
 json_data = fetch_data_from_api(api_url)
 
 # Convert the JSON data to a pandas DataFrame
@@ -402,37 +350,44 @@ df_games = df_games.astype(schema_mapping_games)
 df_player_games = spark.createDataFrame(df_player_games)
 df_games = spark.createDataFrame(df_games)
 
-# Define the Delta Live Tables pipeline
-@dlt.table(
-    name="jw_raw_player_games",
-    comment="Table containing player games data"
-)
-def load_player_games_data():
-    return df_player_games
+df_player_games.write.format("delta").mode("append").partitionBy("timestamp").saveAsTable("tabular.dataexpert.jw_raw_player_games")
 
-@dlt.table(
-    name="jw_raw_games",
-    comment="Table containing team games data"
-)
-def load_team_games_data():
-    return df_games
+df_games.write.format("delta").mode("append").partitionBy("timestamp").saveAsTable("tabular.dataexpert.jw_raw_games")
 
 # COMMAND ----------
 
-# Define the Delta Live Tables pipeline
-@dlt.table(
-    name="jw_raw_player_games",
-    comment="Table containing player games data"
-)
-def load_player_games_data():
-    return df_player_games
+# # Define the Delta Live Tables pipeline
+# @dlt.table(
+#     name="jw_raw_player_games",
+#     comment="Table containing player games data",
+#     table_properties={"pipelines.appendOnly": "true"}  # doesn't work, still overwrites
+# )
+# def load_player_games_data():
+#     return df_player_games
 
-@dlt.table(
-    name="jw_raw_games",
-    comment="Table containing team games data"
-)
-def load_team_games_data():
-    return df_games
+# @dlt.table(
+#     name="jw_raw_games",
+#     comment="Table containing games data",
+#     table_properties={"pipelines.appendOnly": "true"} # doesn't work, still overwrites
+# )
+# def load_games_data():
+#     return df_games
 
 # COMMAND ----------
 
+# Simple version - Completes successfully but overwrites data with every run (no append)
+
+# # Define the Delta Live Tables pipeline
+# @dlt.table(
+#     name="jw_raw_player_games",
+#     comment="Table containing player games data"
+# )
+# def load_player_games_data():
+#     return df_player_games
+
+# @dlt.table(
+#     name="jw_raw_games",
+#     comment="Table containing team games data"
+# )
+# def load_team_games_data():
+#     return df_games

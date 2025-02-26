@@ -386,6 +386,7 @@ pdf_exploded = pdf.explode('PlayerGames')
 df_player_games = pd.json_normalize(pdf_exploded['PlayerGames'])
 df_player_games['timestamp'] = current_timestamp
 df_player_games = fill_nas(df_player_games)
+df_player_games = df_player_games[df_player_games['PlayerID'] != 0]
 df_player_games = df_player_games.astype(schema_mapping_player_games)
 
 # Build the games pandas DataFrame

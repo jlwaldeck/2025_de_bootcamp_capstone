@@ -1,4 +1,6 @@
 -- Databricks notebook source
+-- Write raw csv files to DLT using SQL
+
 CREATE OR REFRESH STREAMING LIVE TABLE jw_historical_hoops
 COMMENT "Ingest ncaa player_game csv data"
 TBLPROPERTIES ("quality" = "bronze")

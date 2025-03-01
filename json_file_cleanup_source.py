@@ -44,7 +44,7 @@ print(f"columns with NaNs: {columns_with_nans}")
 
 # COMMAND ----------
 
-# Check which numeric columns have negative values
+# DQC: Check which numeric columns have negative values
 numeric_columns = df.select_dtypes(include='number').columns
 columns_with_negatives = numeric_columns[(df[numeric_columns] < 0).any()].tolist()
 known_negatives = ['bpm_rd', 'Obpm', 'Dbpm', 'bpm_net', 'bpm', 'sbpm']
@@ -54,7 +54,6 @@ print(f"columns with surprise negative values: {columns_with_negatives}")
 # COMMAND ----------
 
 # Clean up issues found in 2018 dataset
-
 # Fill NaN and None values
 df['cls'] = df['cls'].fillna('unknown')
 df['inches'] = df['inches'].fillna(0)
@@ -80,6 +79,8 @@ grouped = df.groupby('pp').agg(
     unique_teams=('tt', 'nunique')
 ).reset_index()
 
+
+# DQC: Ensure expected results for players with multiple pids
 # Filter to show only player names with multiple unique player IDs
 players_with_multiple_ids = grouped[grouped['unique_player_ids'] > 1]
 
@@ -152,4 +153,5 @@ for i in range(0,10):
 print(f"Total rows: {rows}")
 
 # COMMAND ----------
+
 

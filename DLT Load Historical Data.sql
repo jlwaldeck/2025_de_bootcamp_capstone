@@ -1,5 +1,5 @@
 -- Databricks notebook source
-CREATE OR REFRESH STREAMING LIVE TABLE jw_historical_hoops_bronze
+CREATE OR REFRESH STREAMING LIVE TABLE jw_historical_hoops
 COMMENT "Ingest ncaa player_game csv data"
 TBLPROPERTIES ("quality" = "bronze")
 AS SELECT 

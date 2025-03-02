@@ -87,3 +87,6 @@ https://barttorvik.com/2023_all_advgames.json.gz
 
 Example of game boxscore:
 https://barttorvik.com/box.php?muid=Tennessee%20TechTCU11-13&year=2018
+
+Capstone Requirments:
+https://github.com/DataExpert-io/analytics-engineer-capstone-project?tab=readme-ov-file#-project-submission-instructions
